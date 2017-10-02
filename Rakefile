@@ -1,20 +1,25 @@
-require 'active_record'
 
 task :environment do
   ENV["ACTIVE_RECORD_ENV"] ||= "development"
   require_relative './config/environment'
 end
 
-include ActiveRecord::Tasks
-DatabaseTasks.db_dir = 'db'
-DatabaseTasks.migrations_paths = 'db/migrate'
-seed_loader = Class.new do
-  def load_seed
-    load "#{ActiveRecord::Tasks::DatabaseTasks.db_dir}/seeds.rb"
+namespace :db do
+  task :migrate => :environment do
+    DB.tables.each do |table|
+      DB.execute("DROP TABLE #{table}")
+    end
+
+    Dir[File.join(File.dirname(__FILE__), "db/migrations", "*.rb")].each do |f|
+      require f
+      begin
+        migration = Kernel.const_get(f.split("/").last.split(".rb").first.gsub(/\d+/, "").split("_").collect{|w| w.strip.capitalize}.join())
+        migration.migrate(:up)
+      rescue
+      end
+    end
   end
 end
-DatabaseTasks.seed_loader = seed_loader.new
-load 'active_record/railties/databases.rake'
 
 task :console => :environment do
   Pry.start

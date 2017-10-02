@@ -5,7 +5,9 @@ require_relative '../config/environment'
 RSpec.configure do |config|
 
   config.before(:suite) do
-    clear_db
+    DatabaseCleaner.clean_with(:truncation)
+    DatabaseCleaner.start
+    DatabaseCleaner.clean
     system("rake db:migrate")
     DB.tables
   end
@@ -14,10 +16,6 @@ end
 
 def __
   raise "Replace __ with test code."
-end
-
-def clear_db
-  File.open("db/halloween-test.db", "w+") {|f| f.puts ""}
 end
 
 def get_opening_time
